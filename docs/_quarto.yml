@@ -1,0 +1,34 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "Argus One"
+  description: "DOI-based duplicate merger for Zotero"
+  site-url: "https://cttir.github.io/argus-one/"
+  repo-url: "https://github.com/CTTIR/argus-one"
+  repo-actions: [edit, issue]
+  navbar:
+    background: primary
+    left:
+      - text: "Home"
+        href: index.qmd
+      - text: "Releases"
+        href: "https://github.com/CTTIR/argus-one/releases"
+      - text: "Issues"
+        href: "https://github.com/CTTIR/argus-one/issues"
+    right:
+      - icon: github
+        href: "https://github.com/CTTIR/argus-one"
+        aria-label: GitHub
+  page-footer:
+    left: "© 2026 Raban Heller · MIT License"
+    right: "Built with [Quarto](https://quarto.org)"
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    code-copy: true
+    smooth-scroll: true

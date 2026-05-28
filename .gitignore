@@ -1,0 +1,35 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.swp
+*~
+
+# Node / JS tooling (if ever added)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Quarto
+_site/
+.quarto/
+docs/_site/
+docs/.quarto/
+docs/site_libs/
+*_files/
+
+# Build artifacts (uncomment to exclude built XPIs from version control)
+# *.xpi
+# argus-one-source.zip
+
+# AI tooling artifacts — do not commit
+.claude/
+CLAUDE.md
+MEMORY.md
+.cowork/
+.remember/
