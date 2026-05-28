@@ -5,6 +5,8 @@ author: "Raban Heller"
 date: last-modified
 ---
 
+![](images/icon.svg){width=96px fig-alt="Argus One icon — black square with a large white circle inside"}
+
 ## What is Argus One?
 
 Argus One is a small Zotero plugin that solves exactly one problem: merging items that share the same DOI. Zotero's built-in duplicate detector compares titles, creators, and years — useful, but the wrong tool when DOIs are the source of truth in a curated library.
@@ -13,7 +15,7 @@ Argus One groups items by normalized DOI, keeps the newest record's field values
 
 ## Requirements
 
-- Zotero **8.0 – 9.0.\***
+- Zotero **9** and later
 - A user library with items that have DOIs (either in the dedicated DOI field or as `DOI: …` in the Extra field)
 
 ## Installation
@@ -96,7 +98,29 @@ If an item has no value in the dedicated DOI field, the `Extra` field is scanned
 
 ## Citing Argus One
 
-See the [How to cite this plugin](https://github.com/CTTIR/argus-one#how-to-cite-this-plugin) section of the README for a ready-to-copy BibTeX entry and an APA-style citation.
+If you use Argus One in published work, please cite it. The canonical
+metadata lives in
+[`CITATION.cff`](https://github.com/CTTIR/argus-one/blob/main/CITATION.cff).
+
+**BibTeX**
+
+```bibtex
+@software{heller_argus_one_2026,
+  author  = {Heller, Raban},
+  title   = {Argus One: DOI-based duplicate merger for Zotero},
+  year    = {2026},
+  version = {0.1.0},
+  license = {MIT},
+  url     = {https://github.com/CTTIR/argus-one},
+  note    = {Zotero 9+ plugin}
+}
+```
+
+**APA**
+
+> Heller, R. (2026). *Argus One: DOI-based duplicate merger for Zotero*
+> (Version 0.1.0) [Computer software].
+> https://github.com/CTTIR/argus-one
 
 ## Links
 

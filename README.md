@@ -1,3 +1,5 @@
+<img src="icon.svg" alt="Argus One icon" width="96" align="right" />
+
 # Argus One
 
 A Zotero plugin that merges duplicate items by **DOI only**, keeping the newest record's field values and preserving every collection the duplicates appeared in.
@@ -6,7 +8,7 @@ Zotero's built-in duplicate detector is fuzzy by design — it inspects titles, 
 
 ## Compatibility
 
-- **Zotero 8.0 – 9.0.\*** (see `src/argus-one/manifest.json`)
+- **Zotero 9 and later** (see `src/argus-one/manifest.json`)
 - Cross-platform (Windows, macOS, Linux)
 
 ## Installation

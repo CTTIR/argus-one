@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Union of tags, related items, and collection memberships across duplicates.
 - Re-parents attachments and child notes from older copies to the survivor.
 - Single-transaction execution: any error rolls the entire merge back.
-- Compatibility with Zotero 8.0 – 9.0.\*.
+- Compatibility with Zotero 9 and later.
 
 [Unreleased]: https://github.com/CTTIR/argus-one/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/CTTIR/argus-one/releases/tag/v0.1.0

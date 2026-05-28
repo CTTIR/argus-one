@@ -1,6 +1,6 @@
 # Argus One
 
-A Zotero 7/8 plugin that merges duplicate items by **DOI only**.
+A Zotero 9+ plugin that merges duplicate items by **DOI only**.
 
 ## What it does
 
