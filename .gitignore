@@ -27,9 +27,7 @@ docs/site_libs/
 # *.xpi
 # argus-one-source.zip
 
-# AI tooling artifacts — do not commit
-.claude/
-CLAUDE.md
-MEMORY.md
-.cowork/
-.remember/
+*.tmp
+*.log
+*.bak
+*.orig
