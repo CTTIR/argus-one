@@ -1,0 +1,33 @@
+{
+  "upload_type": "software",
+  "title": "Argus One: DOI-based duplicate merger for Zotero",
+  "version": "0.1.0",
+  "publication_date": "2026-08-11",
+  "description": "<p>Argus One is a plugin for the Zotero reference manager that merges duplicate bibliographic entries identified by their digital object identifier. When duplicates are found it keeps the field values of the most recent record and combines tags, related items and collection memberships across all copies, so that no categorisation is lost in the merge. Attachments and notes are re-parented onto the surviving record and the older copies are moved to the trash, with the whole operation carried out in a single transaction so that a failure cannot leave the library half-merged. It is aimed at researchers maintaining large shared reference libraries where duplicates accumulate over time.</p>",
+  "creators": [
+    {
+      "name": "Heller, Raban"
+    }
+  ],
+  "contributors": [],
+  "license": "mit",
+  "access_right": "open",
+  "language": "eng",
+  "keywords": [
+    "zotero",
+    "zotero-plugin",
+    "reference-management",
+    "deduplication",
+    "doi",
+    "bibliography"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/CTTIR/argus-one",
+      "relation": "isSupplementTo",
+      "scheme": "url",
+      "resource_type": "software"
+    }
+  ],
+  "notes": "Prepared draft. Not yet published."
+}

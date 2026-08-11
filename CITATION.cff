@@ -1,24 +1,22 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite it using these metadata."
-title: "Argus One: DOI-based duplicate merger for Zotero"
-abstract: >-
-  Argus One is a Zotero plugin that merges duplicate items by DOI only.
-  It keeps the newest record's field values, unions tags, related items,
-  and collection memberships across duplicates, re-parents attachments
+message: If you use this software, please cite it as below.
+title: 'Argus One: DOI-based duplicate merger for Zotero'
+abstract: Argus One is a Zotero plugin that merges duplicate items by DOI only. It keeps the newest record's
+  field values, unions tags, related items, and collection memberships across duplicates, re-parents attachments
   and notes, and trashes older copies inside a single transaction.
 type: software
 authors:
-  - family-names: Heller
-    given-names: Raban
-    email: raban.heller@outlook.com
+- family-names: Heller
+  given-names: Raban
 version: 0.1.0
-date-released: 2026-05-28
+date-released: '2026-08-11'
 license: MIT
-repository-code: "https://github.com/CTTIR/argus-one"
-url: "https://github.com/CTTIR/argus-one"
+repository-code: https://github.com/CTTIR/argus-one
+url: https://github.com/CTTIR/argus-one
 keywords:
-  - zotero
-  - zotero-plugin
-  - doi
-  - deduplication
-  - reference-management
+- zotero
+- zotero-plugin
+- doi
+- deduplication
+- reference-management
+doi: 10.5281/zenodo.21889976

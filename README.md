@@ -2,6 +2,8 @@
 
 # Argus One
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21889976.svg)](https://doi.org/10.5281/zenodo.21889976)
+
 A Zotero plugin that merges duplicate items by **DOI only**, keeping the newest record's field values and preserving every collection the duplicates appeared in.
 
 Zotero's built-in duplicate detector is fuzzy by design — it inspects titles, creators, and years. That is the right default for most libraries but a poor fit for curated collections where the DOI is the source of truth. Argus One does one job: it groups items that share a normalized DOI, picks a survivor by `dateAdded`, fills missing fields from older copies, unions tags / related items / collection memberships, re-parents attachments and notes, and trashes the older records inside a single Zotero transaction.
@@ -96,3 +98,11 @@ If Argus One supports your research, please cite it.
 - **License:** [MIT](LICENSE)
 - **Changelog:** [CHANGELOG.md](CHANGELOG.md)
 - **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md)
+
+## Citation
+
+If you use this software, please cite it as:
+
+> Heller, R. (2026). *Argus One: DOI-based duplicate merger for Zotero* (Version 0.1.0) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.21889976
+
+DOI: [10.5281/zenodo.21889976](https://doi.org/10.5281/zenodo.21889976)
