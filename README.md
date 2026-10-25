@@ -1,4 +1,4 @@
-<img src="icon.svg" alt="Argus One icon" width="96" align="right" />
+<img src="assets/branding/logo.png" alt="argus-one hex logo" width="120" height="139" align="right" />
 
 # Argus One
 
@@ -124,3 +124,9 @@ must be reviewed and revised before inclusion, and references must be verified
 against their DOI, arXiv ID or ISBN.
 
 Local software setup: vLLM with Python/PyTorch, plus R and RStudio.
+
+## Branding
+
+The supplied CTTIR Material Atlas artwork and its editable R source are in
+[`tools/branding`](tools/branding/README.md). Use that renderer to reproduce
+the primary badge, alternate editions, and platform icons.

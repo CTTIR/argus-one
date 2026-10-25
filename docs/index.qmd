@@ -5,7 +5,7 @@ author: "Raban Heller"
 date: last-modified
 ---
 
-![](images/icon.svg){width=96px fig-alt="Argus One icon — black square with a large white circle inside"}
+![](images/icon.svg){height=139px fig-alt="argus-one hex logo"}
 
 ## What is Argus One?
 

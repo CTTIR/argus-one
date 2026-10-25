@@ -3,6 +3,7 @@ project:
   output-dir: _site
 
 website:
+  favicon: images/icon-symbol.svg
   title: "Argus One"
   description: "DOI-based duplicate merger for Zotero"
   site-url: "https://cttir.github.io/argus-one/"
