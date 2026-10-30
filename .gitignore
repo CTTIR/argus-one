@@ -26,6 +26,7 @@ docs/site_libs/
 # Build artifacts (uncomment to exclude built XPIs from version control)
 # *.xpi
 # argus-one-source.zip
+/dist/
 
 *.tmp
 *.log

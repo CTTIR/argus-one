@@ -1,5 +1,5 @@
 /* Argus One — bootstrap.js
- * Lifecycle hooks for Zotero 8/9 bootstrapped plugin.
+ * Lifecycle hooks for the declared Zotero 9/10 plugin range.
  */
 
 const FTL_FILE = "argus-one.ftl";
@@ -25,7 +25,7 @@ async function startup({ id, version, rootURI }) {
 
 function shutdown() {
   log("shutdown");
-  if (ArgusOne) ArgusOne.unregisterMenu();
+  if (ArgusOne) ArgusOne.shutdown();
   ArgusOne = undefined;
   if (Zotero.ArgusOne) delete Zotero.ArgusOne;
 }

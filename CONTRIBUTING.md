@@ -12,22 +12,12 @@ Thanks for taking the time to contribute. Argus One is a small, focused Zotero p
 
 1. Clone the repo.
 2. The plugin source lives in `src/argus-one/`.
-3. To test locally, package it as an `.xpi`:
-
-   ```powershell
-   cd src/argus-one
-   Compress-Archive -Path * -DestinationPath ../../argus-one-dev.xpi -Force
-   ```
-
-   or with `zip`:
-
-   ```bash
-   cd src/argus-one
-   zip -r ../../argus-one-dev.xpi . -x "*.DS_Store"
-   ```
-
-4. In Zotero: **Tools → Plugins → ⚙ → Install Plugin From File…** and pick the `.xpi`.
-5. Reinstall after each change. Use **Help → Debug Output Logging** to capture `Zotero.debug` output (lines prefixed with `[Argus One]`).
+3. Run `node --test tests/*.test.cjs` (Node.js 18+).
+4. Run `python3 tools/build.py`, then `python3 tools/build.py --check`.
+5. Use the resulting `dist/argus-one-<version>.xpi` only in a disposable Zotero
+   profile until live validation succeeds. Preserve historical root archives.
+6. Enable Zotero debug output when testing. Native merges are per-group
+   transactions; do not add an outer transaction around the merge API.
 
 ## Pull requests
 

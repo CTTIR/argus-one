@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Argus One",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "DOI-based duplicate merger. Matches strictly on DOI, keeps the newest record's field values, and preserves all collection memberships.",
   "author": "Raban Heller",
   "icons": {
@@ -11,9 +11,8 @@
   "applications": {
     "zotero": {
       "id": "argus-one@rheller.dev",
-      "update_url": "https://raw.githubusercontent.com/CTTIR/argus-one/main/updates.json",
       "strict_min_version": "9.0",
-      "strict_max_version": "9.*"
+      "strict_max_version": "10.0.*"
     }
   }
 }

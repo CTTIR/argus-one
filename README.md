@@ -4,69 +4,90 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21889976.svg)](https://doi.org/10.5281/zenodo.21889976)
 
-A Zotero plugin that merges duplicate items by **DOI only**, keeping the newest record's field values and preserving every collection the duplicates appeared in.
+A Zotero plugin that identifies duplicates by exact normalized DOI and selects
+newest record values before handing the merge to Zotero's native operation.
+Only personal-library items of the same type are eligible.
 
-Zotero's built-in duplicate detector is fuzzy by design — it inspects titles, creators, and years. That is the right default for most libraries but a poor fit for curated collections where the DOI is the source of truth. Argus One does one job: it groups items that share a normalized DOI, picks a survivor by `dateAdded`, fills missing fields from older copies, unions tags / related items / collection memberships, re-parents attachments and notes, and trashes the older records inside a single Zotero transaction.
+## Compatibility and status
 
-## Compatibility
+The current local candidate is **0.1.1**. The manifest declares Zotero 9.0 through
+10.0.*. Zotero 10.0.5/10.0.6 API source was inspected; the application is now
+observed at **10.0.7**. Adapter tests pass, but **live plugin qualification has
+not been run**. See [audit and validation](docs/AUDIT-2026-10-30.md).
 
-- **Zotero 9 and later** (see `src/argus-one/manifest.json`)
-- Cross-platform (Windows, macOS, Linux)
+The root `argus-one-0.1.0.xpi` and `argus-one-source.zip` are preserved historical
+artifacts. Their manifests differ from the former source and do not support
+Zotero 10. Do not use them for this candidate. There is no published 0.1.1 release
+or functioning automatic update feed; updates are manual until publication.
 
-## Installation
+## Build and install the candidate
 
-1. Download the latest `argus-one-<version>.xpi` from the [Releases](https://github.com/CTTIR/argus-one/releases) page.
-2. In Zotero, open **Tools → Plugins**.
-3. Click the gear icon → **Install Plugin From File…**
-4. Select the downloaded `.xpi`.
-5. Restart Zotero if prompted.
-
-## Usage
-
-1. Open **Tools → Argus One: merge DOI duplicates…**
-2. A confirmation dialog reports how many DOI duplicate groups were found and how many items will be moved to trash.
-3. Confirm to merge. All work runs inside one Zotero database transaction, so any error rolls the entire operation back.
-4. Empty the Zotero trash yourself when you have verified the result.
-
-### Merge rules
-
-For every group of items that share the same normalized DOI:
-
-1. **Pick the newest** by `dateAdded` (ties broken by higher `itemID`).
-2. **Newest wins on conflicts.** If the survivor already has a value in a field, that value is kept. Empty fields are filled from older siblings.
-3. **Collections are unioned.** If the DOI appeared in collections `A` and `B`, the survivor ends up in both.
-4. **Tags, related items, and creators** are unioned across all duplicates (creators only if the survivor has none).
-5. **Attachments and child notes** of older copies are re-parented to the survivor.
-6. **Older copies move to trash** — never deleted permanently.
-
-### DOI normalization
-
-Case-insensitive. Strips `https://doi.org/`, `https://dx.doi.org/`, and `doi:` prefixes. Items without a dedicated DOI field also have their `Extra` field scanned for `DOI: …`.
-
-### Out of scope
-
-- Items without a DOI are ignored.
-- Group libraries are not touched (user library only in this version).
-- No fuzzy title matching — use Zotero's built-in **Duplicate Items** view for that.
-
-## Building from source
-
-```powershell
-cd src/argus-one
-Compress-Archive -Path * -DestinationPath ../../argus-one-0.1.0.xpi -Force
-Rename-Item ../../argus-one-0.1.0.xpi.zip ../../argus-one-0.1.0.xpi
-```
-
-Or with `zip`:
+Requires Python 3 and Node.js 18+ for tests; no npm dependencies are needed.
 
 ```bash
-cd src/argus-one
-zip -r ../../argus-one-0.1.0.xpi . -x "*.DS_Store"
+node --test tests/*.test.cjs
+python3 tools/build.py
+python3 tools/build.py --check
 ```
+
+The builder creates `dist/argus-one-0.1.1.xpi`, a corresponding source ZIP and
+SHA-256 receipt. Sorted inputs and fixed archive metadata make repeated builds
+identical. Existing different output files are never overwritten; select a new
+`--output PATH` directory for a revised build.
+
+Keep a full Zotero data-directory backup. First install the candidate in a
+**disposable Zotero profile** using **Tools → Plugins → Install Plugin From File**.
+Review the results there before installing it in the working profile. Source and
+build presence do not mean the plugin is installed or enabled.
+
+## Usage and merge policy
+
+1. Open **Tools → Argus One: merge DOI duplicates…**
+2. Review every DOI, survivor key/title, and list of older keys in the preview.
+3. Confirm to process the eligible groups. Mixed types, pending edits, malformed
+   identifiers and otherwise unsafe groups are left for review.
+4. Review the library before emptying trash. Re-run Workbench extraction/audit
+   after merges because parent and attachment identities may have changed.
+
+Newest `dateAdded` wins, with higher item ID breaking ties. Existing survivor
+fields are kept; valid blank fields and missing creators are filled from newer
+siblings first. Zotero's native merge then handles collections, tags, incoming
+relations, replacement/citation identity, notes, attachments, and undo tracking.
+It may consolidate attachments using native PDF text or web-title matching,
+even when files are not byte-identical, and retains the **earliest dateAdded**
+for the merged record. Those native semantics are intentional in 0.1.1.
+
+Each group has its **own native transaction**. If a later group fails, earlier
+successful groups remain merged and the result dialog states how many completed.
+Children use their current saved content; pending child/annotation/related-item
+edits block merging. Failed merges reload affected object and relation caches;
+if recovery fails, restart Zotero before using the library again.
+The native operation is never nested in another transaction. Pending database
+work or changes since preview stop application and require a fresh scan. Field
+errors are reported; they are not silently ignored while records are trashed.
+Disabling the plugin stops pending groups. A native merge already in flight is
+allowed to finish safely, and its result remains part of the completed count.
+
+## DOI and library boundaries
+
+Normalization removes `doi:` and `https://(dx.)doi.org/` wrappers and folds case.
+It requires `10.` followed by 4–9 digits, `/`, and a non-whitespace suffix, while
+preserving suffix punctuation. An absent dedicated DOI can use a single,
+unambiguous `DOI:` entry in Extra. A malformed dedicated DOI or conflicting Extra
+identifiers is not guessed. Same DOI does not independently prove that records
+are the same work: review wrong/misassigned DOIs before merging.
+
+No fuzzy matching of parent records, group-library changes, permanent deletion, or automatic
+background merges are performed.
 
 ## Documentation
 
-Full vignette and walkthrough: <https://cttir.github.io/argus-one/>
+- [Audit, acceptance checks, and remaining limits](docs/AUDIT-2026-10-30.md)
+- [Contributing and builds](CONTRIBUTING.md)
+- Existing published documentation: <https://cttir.github.io/argus-one/>
+
+The citation below identifies the published 0.1.0 software; the 0.1.1 candidate
+has not been published or assigned a new release DOI.
 
 ## How to cite this plugin
 
@@ -89,7 +110,7 @@ If Argus One supports your research, please cite it.
 
 > Heller, R. (2026). *Argus One: DOI-based duplicate merger for Zotero* (Version 0.1.0) [Computer software]. https://github.com/CTTIR/argus-one
 
-> **DOI:** none yet. To mint a permanent DOI, enable the [Zenodo–GitHub integration](https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content) and publish a release. Once minted, paste the DOI into the `doi:` field of `CITATION.cff` and into the BibTeX entry above as `doi = {10.xxxx/zenodo.xxxxxxx}`.
+> Published 0.1.0 DOI: https://doi.org/10.5281/zenodo.21889976. The local 0.1.1 candidate has not been published.
 
 ## Links
 

@@ -1,42 +1,25 @@
-# Argus One
+# Argus One 0.1.1 candidate
 
-A Zotero 9+ plugin that merges duplicate items by **DOI only**.
+A Zotero DOI duplicate-merging plugin for the declared 9.0–10.0.* range.
+Installed Zotero 10.0.5 API source and executable adapter tests were checked;
+consult the repository audit for live-validation evidence.
 
-## What it does
+Install this candidate first in a disposable Zotero profile through Tools →
+Plugins → Install Plugin From File. Keep a full library backup before real use.
 
-For every group of items that share the same DOI:
+Tools → Argus One: merge DOI duplicates… previews DOI groups and record keys.
+Only personal-library regular items of one type with valid exact DOI identity
+are eligible. The newest record's field values win; empty fields and absent
+creators are filled from older copies. Zotero's native merge handles collections,
+tags, children, replacement/citation identity, related links and undo support.
+It can consolidate attachments by PDF text or web title, even when files differ,
+and keeps the earliest dateAdded. Live plugin qualification has not been run.
 
-1. **Pick the newest** record by `dateAdded` (ties go to the higher itemID).
-2. **Newest wins on conflicts.** If the survivor already has a value in a field, that value is kept. If it's empty, the value is taken from an older sibling.
-3. **Preserve collection positions.** The survivor is added to the *union* of every collection any of the duplicates appeared in. So if DOI `X` was in collections `A` and `B` (one copy in each), the single surviving item now lives in both `A` and `B`.
-4. **Tags and related items** are unioned across all duplicates.
-5. **Attachments and child notes** of older copies are re-parented to the survivor (nothing lost).
-6. **Older copies move to trash.**
+Each group has its own transaction. A failure stops the run; earlier completed
+groups remain merged. Stale previews, pending edits and active database work are
+refused. Review all results before emptying trash and rerun external Workbench
+extraction/audit after merges. Reversing trash alone is not a complete merge undo.
 
-DOI normalization: case-insensitive, strips `https://doi.org/`, `https://dx.doi.org/`, and `doi:` prefixes. Items also have their `Extra` field scanned for `DOI: …` when no dedicated DOI field is present.
-
-## Install
-
-1. In Zotero: **Tools → Plugins → ⚙ → Install Plugin From File…**
-2. Pick `argus-one-0.1.0.xpi`.
-3. **Tools → Argus One: merge DOI duplicates…**
-
-A confirmation dialog shows the group count before anything changes. All work happens inside a single Zotero transaction, so an error rolls everything back.
-
-## What it does NOT do
-
-- Does not touch items without a DOI.
-- Does not delete anything permanently — losers go to the trash. Empty the trash yourself when you're satisfied.
-- Does not modify group library items (operates on the user library only in this version).
-- Does not fuzzy-match titles. Use Zotero's built-in **Duplicate Items** view for that.
-
-## Building the .xpi from source
-
-```bash
-cd argus-one
-zip -r ../argus-one-0.1.0.xpi . -x "*.DS_Store"
-```
-
-## Compatibility
-
-- Zotero **7.0+** (tested target: 7.x, 8.x).
+There is no automatic update feed for this candidate. The root 0.1.0 archives in
+the repository are historical and do not support Zotero 10. Build current source
+with `python3 tools/build.py` from the repository root; new artifacts go to dist/.

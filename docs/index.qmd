@@ -7,94 +7,53 @@ date: last-modified
 
 ![](images/icon.svg){height=139px fig-alt="argus-one hex logo"}
 
-## What is Argus One?
+## Current local candidate
 
-Argus One is a small Zotero plugin that solves exactly one problem: merging items that share the same DOI. Zotero's built-in duplicate detector compares titles, creators, and years — useful, but the wrong tool when DOIs are the source of truth in a curated library.
+Version **0.1.1** uses Zotero's native merge operation after choosing the newest
+record's values and filling valid empty fields. The manifest declares Zotero
+9.0–10.0.*; installed 10.0.5 API inspection and adapter regression tests support
+this candidate, while live-profile validation is recorded in
+[the audit](AUDIT-2026-10-30.md).
 
-Argus One groups items by normalized DOI, keeps the newest record's field values, fills in blanks from older copies, unions tags, related items, and collection memberships, re-parents attachments and notes, and trashes the older copies — all in a single Zotero transaction.
+Build from the repository root:
 
-## Requirements
-
-- Zotero **9** and later
-- A user library with items that have DOIs (either in the dedicated DOI field or as `DOI: …` in the Extra field)
-
-## Installation
-
-1. Download the latest `.xpi` from the [Releases](https://github.com/CTTIR/argus-one/releases) page.
-2. In Zotero: **Tools → Plugins**.
-3. Click the gear icon → **Install Plugin From File…**
-4. Select the downloaded file.
-
-![Zotero plugin installation dialog](images/install.png){fig-alt="Drop a screenshot of the Zotero plugin installer here at docs/images/install.png"}
-
-## A full walkthrough
-
-### 1. Find a library with duplicates
-
-Suppose you have imported the same set of papers from two sources — a shared group folder and a personal RIS export — and you now have two copies of many DOIs scattered across collections.
-
-![Duplicate items spread across collections](images/duplicates-before.png){fig-alt="Drop a screenshot showing duplicate items before merging at docs/images/duplicates-before.png"}
-
-### 2. Run the merger
-
-Open **Tools → Argus One: merge DOI duplicates…**
-
-Argus One scans your user library, ignoring attachments, notes, trashed items, and child items. It groups what remains by normalized DOI and shows a confirmation dialog:
-
-```
-Found 12 DOI duplicate groups covering 27 items.
-
-Merging will:
-  • Keep the newest record per DOI (by dateAdded)
-  • Fill missing fields from older copies
-  • Preserve every collection the duplicates appeared in
-  • Move 15 older records to trash
-
-Proceed?
+```bash
+node --test tests/*.test.cjs
+python3 tools/build.py
+python3 tools/build.py --check
 ```
 
-### 3. What happens during the merge
+Install `dist/argus-one-0.1.1.xpi` in a disposable Zotero profile first. The root
+0.1.0 archives are preserved historical files, not the current build. No 0.1.1
+release or automatic update feed has been published.
 
-For each group of items that share a DOI:
+## Review and merge
 
-| Step | Behaviour |
-|------|-----------|
-| Survivor selection | Newest `dateAdded` wins; ties broken by higher `itemID`. |
-| Field conflicts | Survivor's existing value wins. Only blank fields are filled from older copies. |
-| Creators | Survivor's creators are kept. If empty, borrowed from an older copy. |
-| Tags | Unioned across all duplicates. |
-| Related items | Unioned (excluding the merged-away items themselves). |
-| Collections | Unioned — if the DOI was in collections `A` and `B`, the survivor ends up in both. |
-| Attachments & notes | Re-parented from older copies to the survivor. |
-| Older copies | Moved to trash. Not deleted permanently. |
+Open **Tools → Argus One: merge DOI duplicates…**. The preview lists each DOI,
+newest survivor key/title, and older record keys. Same-type, non-trashed personal
+library items are eligible; incompatible groups, unsaved edits and changed
+previews are refused. An item with an invalid DOI or conflicting Extra identifiers
+is not guessed.
 
-All of the above runs inside a single `Zotero.DB.executeTransaction` call. If anything throws, the entire merge is rolled back.
+Native Zotero merging preserves collection/tag behavior, child and annotation
+remapping, incoming relations and replacement identity for citations. It can
+consolidate attachments by native PDF text or web-title matching, including
+files that are not byte-identical, and uses the earliest `dateAdded` for the
+merged record. Newest field selection is made before that native timestamp rule.
 
-### 4. After the merge
+Each group is a separate transaction. If a later group fails, completed groups
+remain merged and the result dialog reports them. Keep a full data-directory
+backup, inspect results before emptying trash, and rerun Workbench extraction
+and audit after record or attachment identities change. Native merge is not
+nested inside another database transaction.
 
-A summary dialog shows how many groups were merged and how many records were trashed:
+DOI normalization removes known URL/`doi:` prefixes, folds case, and requires
+`10.` plus 4–9 digits, `/`, and a non-whitespace suffix. Suffix punctuation is
+preserved. No fuzzy matching, group-library changes or permanent deletion is
+performed. A shared DOI is a grouping key, not proof against misassigned metadata.
 
-![Argus One result dialog](images/result.png){fig-alt="Drop a screenshot of the final result dialog at docs/images/result.png"}
-
-Inspect the Zotero trash before emptying it. Once you are satisfied, **Edit → Empty Trash**.
-
-## DOI normalization
-
-A DOI like `https://doi.org/10.1000/XYZ.123`, `doi:10.1000/xyz.123`, and `10.1000/XYZ.123 ` are all treated as the same key. Normalization:
-
-- Lowercases the string
-- Strips a leading `https://doi.org/` or `https://dx.doi.org/`
-- Strips a leading `doi:`
-- Trims whitespace
-- Requires the result to match `^10\..+/.+`
-
-If an item has no value in the dedicated DOI field, the `Extra` field is scanned for `DOI: …`.
-
-## What Argus One does not do
-
-- It does not merge items without a DOI. Use Zotero's **Duplicate Items** view for fuzzy title matching.
-- It does not delete anything permanently. Losers move to trash.
-- It does not modify group libraries in this version.
+The citation below identifies the published 0.1.0 release; this local candidate
+has not been given a new release DOI.
 
 ## Citing Argus One
 
@@ -112,7 +71,7 @@ metadata lives in
   version = {0.1.0},
   license = {MIT},
   url     = {https://github.com/CTTIR/argus-one},
-  note    = {Zotero 9+ plugin}
+  note    = {Published 0.1.0 release}
 }
 ```
 
