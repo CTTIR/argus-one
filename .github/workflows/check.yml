@@ -1,0 +1,20 @@
+name: Plugin checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: node --check src/argus-one/argus.js
+      - run: node --check src/argus-one/bootstrap.js
+      - run: node --test tests/argus.test.cjs
+      - run: python3 -m unittest discover -s tests -p 'test_*.py'
+      - run: python3 tools/build.py

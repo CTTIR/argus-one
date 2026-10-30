@@ -12,22 +12,15 @@ Thanks for taking the time to contribute. Argus One is a small, focused Zotero p
 
 1. Clone the repo.
 2. The plugin source lives in `src/argus-one/`.
-3. To test locally, package it as an `.xpi`:
+3. Run `node --test tests/argus.test.cjs` and
+   `python3 -m unittest discover -s tests -p 'test_*.py'`.
+4. Run `python3 tools/build.py`. This builds `dist/argus-one-0.1.0-dev.xpi`
+   without replacing historical archives.
+5. Install the candidate into a disposable Zotero 9.x profile with synthetic
+   records and complete `docs/maintenance-2026-10-30.md` before release.
 
-   ```powershell
-   cd src/argus-one
-   Compress-Archive -Path * -DestinationPath ../../argus-one-dev.xpi -Force
-   ```
-
-   or with `zip`:
-
-   ```bash
-   cd src/argus-one
-   zip -r ../../argus-one-dev.xpi . -x "*.DS_Store"
-   ```
-
-4. In Zotero: **Tools → Plugins → ⚙ → Install Plugin From File…** and pick the `.xpi`.
-5. Reinstall after each change. Use **Help → Debug Output Logging** to capture `Zotero.debug` output (lines prefixed with `[Argus One]`).
+The Node tests model the Zotero API contract. They do not establish that the
+actual SQLite transaction, citation redirection, sync, or plugin UI works.
 
 ## Pull requests
 

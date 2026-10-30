@@ -15,17 +15,16 @@ Argus One groups items by normalized DOI, keeps the newest record's field values
 
 ## Requirements
 
-- Zotero **9** and later
+- Zotero **9.x** (the declared manifest target; host qualification is pending)
 - A user library with items that have DOIs (either in the dedicated DOI field or as `DOI: …` in the Extra field)
 
 ## Installation
 
-1. Download the latest `.xpi` from the [Releases](https://github.com/CTTIR/argus-one/releases) page.
+1. Build the development candidate with `python3 tools/build.py` from the repository root. No release was available at the 30 October 2026 audit. Use a disposable synthetic profile until host qualification is complete.
 2. In Zotero: **Tools → Plugins**.
 3. Click the gear icon → **Install Plugin From File…**
 4. Select the downloaded file.
 
-![Zotero plugin installation dialog](images/install.png){fig-alt="Drop a screenshot of the Zotero plugin installer here at docs/images/install.png"}
 
 ## A full walkthrough
 
@@ -33,7 +32,6 @@ Argus One groups items by normalized DOI, keeps the newest record's field values
 
 Suppose you have imported the same set of papers from two sources — a shared group folder and a personal RIS export — and you now have two copies of many DOIs scattered across collections.
 
-![Duplicate items spread across collections](images/duplicates-before.png){fig-alt="Drop a screenshot showing duplicate items before merging at docs/images/duplicates-before.png"}
 
 ### 2. Run the merger
 
@@ -63,9 +61,10 @@ For each group of items that share a DOI:
 | Field conflicts | Survivor's existing value wins. Only blank fields are filled from older copies. |
 | Creators | Survivor's creators are kept. If empty, borrowed from an older copy. |
 | Tags | Unioned across all duplicates. |
-| Related items | Unioned (excluding the merged-away items themselves). |
+| Relations | Zotero preserves incoming and outgoing links and citation redirects. |
 | Collections | Unioned — if the DOI was in collections `A` and `B`, the survivor ends up in both. |
-| Attachments & notes | Re-parented from older copies to the survivor. |
+| Attachments & notes | Attachments remain separate, including trashed ones. Zotero moves notes and updates their item links. |
+| Date added | The newest record is chosen first; Zotero then retains the earliest date in the merged group. |
 | Older copies | Moved to trash. Not deleted permanently. |
 
 All of the above runs inside a single `Zotero.DB.executeTransaction` call. If anything throws, the entire merge is rolled back.
@@ -74,7 +73,6 @@ All of the above runs inside a single `Zotero.DB.executeTransaction` call. If an
 
 A summary dialog shows how many groups were merged and how many records were trashed:
 
-![Argus One result dialog](images/result.png){fig-alt="Drop a screenshot of the final result dialog at docs/images/result.png"}
 
 Inspect the Zotero trash before emptying it. Once you are satisfied, **Edit → Empty Trash**.
 
@@ -86,7 +84,7 @@ A DOI like `https://doi.org/10.1000/XYZ.123`, `doi:10.1000/xyz.123`, and `10.100
 - Strips a leading `https://doi.org/` or `https://dx.doi.org/`
 - Strips a leading `doi:`
 - Trims whitespace
-- Requires the result to match `^10\..+/.+`
+- Requires a numeric DOI prefix and a complete non-whitespace suffix; ambiguous trailing text is rejected.
 
 If an item has no value in the dedicated DOI field, the `Extra` field is scanned for `DOI: …`.
 
@@ -112,7 +110,7 @@ metadata lives in
   version = {0.1.0},
   license = {MIT},
   url     = {https://github.com/CTTIR/argus-one},
-  note    = {Zotero 9+ plugin}
+  note    = {Zotero 9.x plugin}
 }
 ```
 
@@ -128,3 +126,18 @@ metadata lives in
 - **Issues:** <https://github.com/CTTIR/argus-one/issues>
 - **Releases:** <https://github.com/CTTIR/argus-one/releases>
 - **License:** [MIT](https://github.com/CTTIR/argus-one/blob/main/LICENSE)
+
+## Developer verification
+
+From the repository root, run:
+
+```sh
+node --test tests/argus.test.cjs
+python3 -m unittest discover -s tests -p 'test_*.py'
+python3 tools/build.py
+```
+
+Prerequisites: Node.js 24 and Python 3.9 or newer. The tests use synthetic host
+fixtures, not a real Zotero database. The development archive is not a published
+release. See the maintenance record in the source repository for the required
+Zotero integration checks.

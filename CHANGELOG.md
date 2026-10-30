@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Preserve relations and citation redirects through Zotero's native merge API;
+  keep attachments separate and let unexpected host errors abort the transaction.
+- Reject stale or ineligible groups, malformed DOI values and invalid dates;
+  prevent overlapping interactive runs and preserve numeric zero fields.
+- Remove the missing update-feed URL and document the actual Zotero 9.x target.
+
+### Added
+
+- Synthetic host-contract regressions, reproducible development XPI builds,
+  source/archive validation and a plugin-check workflow.
+
+Host integration qualification is still required before a release.
+
 ## [0.1.0] - 2026-05-28
 
 ### Added

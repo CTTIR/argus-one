@@ -17,6 +17,7 @@ Zotero.ArgusOne = {
   version: null,
   rootURI: null,
   menuRegistrationID: null,
+  running: false,
 
   init({ id, version, rootURI }) {
     this.id = id;
@@ -68,78 +69,78 @@ Zotero.ArgusOne = {
     s = s.replace(/^doi:\s*/, "");
     s = s.trim();
     if (!s) return null;
-    // Sanity check: a DOI must start with "10." and contain a slash.
-    if (!/^10\.\S+\/\S+/.test(s)) return null;
+    // Require a numeric DOI prefix and the entire non-whitespace suffix.
+    if (!/^10\.\d+(?:\.\d+)*\/\S+$/.test(s)) return null;
     return s;
   },
 
   getItemDOI(item) {
-    // Try the dedicated DOI field first.
-    let doi = null;
-    try {
-      if (item.getField && Zotero.ItemFields.isValidForType(
-        Zotero.ItemFields.getID("DOI"), item.itemTypeID)) {
-        doi = item.getField("DOI");
-      }
-    } catch (e) { /* field not valid for this type */ }
-    if (doi) return this.normalizeDOI(doi);
-
-    // Fall back to scanning Extra for "DOI: ..." (common for items without a DOI field).
-    try {
-      const extra = item.getField("extra");
-      if (extra) {
-        const m = extra.match(/(?:^|\n)\s*DOI\s*:\s*(\S+)/i);
-        if (m) return this.normalizeDOI(m[1]);
-      }
-    } catch (e) {}
-    return null;
+    // Invalid-for-type fields are expected; unexpected host errors must remain
+    // visible instead of silently removing records from the duplicate scan.
+    const doiField = Zotero.ItemFields.getID("DOI");
+    if (Zotero.ItemFields.isValidForType(doiField, item.itemTypeID)) {
+      const doi = item.getField("DOI");
+      if (doi) return this.normalizeDOI(doi);
+    }
+    const extra = item.getField("extra");
+    const match = extra && extra.match(/(?:^|\n)\s*DOI\s*:\s*([^\r\n]+)/i);
+    return match ? this.normalizeDOI(match[1]) : null;
   },
 
   // ───────────────────────────────────────── Main entry
 
   async runInteractive(window) {
-    const libraryID = Zotero.Libraries.userLibraryID;
-    // Could be extended to group libraries; user library by default.
-    const groups = await this.findDuplicateGroups(libraryID);
-
-    const groupCount = groups.length;
-    const totalItems = groups.reduce((n, g) => n + g.length, 0);
-    const willRemove = totalItems - groupCount;
-
-    if (groupCount === 0) {
-      window.alert("Argus One: no DOI duplicates found.");
+    if (this.running) {
+      window.alert("Argus One: a merge is already in progress.");
       return;
     }
+    this.running = true;
+    try {
+      const libraryID = Zotero.Libraries.userLibraryID;
+      // Could be extended to group libraries; user library by default.
+      const groups = await this.findDuplicateGroups(libraryID);
 
-    const ok = Services.prompt.confirm(
-      window,
-      "Argus One",
-      `Found ${groupCount} DOI duplicate group${groupCount === 1 ? "" : "s"} ` +
-      `covering ${totalItems} items.\n\n` +
-      `Merging will:\n` +
-      `  • Keep the newest record per DOI (by dateAdded)\n` +
-      `  • Fill missing fields from older copies\n` +
-      `  • Preserve every collection the duplicates appeared in\n` +
-      `  • Move ${willRemove} older record${willRemove === 1 ? "" : "s"} to trash\n\n` +
-      `Proceed?`
-    );
-    if (!ok) return;
+      const groupCount = groups.length;
+      const totalItems = groups.reduce((n, g) => n + g.length, 0);
+      const willRemove = totalItems - groupCount;
 
-    let merged = 0;
-    let trashed = 0;
-    await Zotero.DB.executeTransaction(async () => {
-      for (const group of groups) {
-        const r = await this.mergeGroup(group);
-        merged++;
-        trashed += r.trashed;
+      if (groupCount === 0) {
+        window.alert("Argus One: no DOI duplicates found.");
+        return;
       }
-    });
 
-    window.alert(
-      `Argus One done.\n\n` +
-      `Merged ${merged} group${merged === 1 ? "" : "s"}.\n` +
-      `${trashed} older record${trashed === 1 ? "" : "s"} moved to trash.`
-    );
+      const ok = Services.prompt.confirm(
+        window,
+        "Argus One",
+        `Found ${groupCount} DOI duplicate group${groupCount === 1 ? "" : "s"} ` +
+        `covering ${totalItems} items.\n\n` +
+        `Merging will:\n` +
+        `  • Keep the newest record per DOI (by dateAdded)\n` +
+        `  • Fill missing fields from older copies\n` +
+        `  • Preserve every collection the duplicates appeared in\n` +
+        `  • Move ${willRemove} older record${willRemove === 1 ? "" : "s"} to trash\n\n` +
+        `Proceed?`
+      );
+      if (!ok) return;
+
+      let merged = 0;
+      let trashed = 0;
+      await Zotero.DB.executeTransaction(async () => {
+        for (const group of groups) {
+          const r = await this.mergeGroup(group);
+          merged++;
+          trashed += r.trashed;
+        }
+      });
+
+      window.alert(
+        `Argus One done.\n\n` +
+        `Merged ${merged} group${merged === 1 ? "" : "s"}.\n` +
+        `${trashed} older record${trashed === 1 ? "" : "s"} moved to trash.`
+      );
+    } finally {
+      this.running = false;
+    }
   },
 
   // ───────────────────────────────────────── Discovery
@@ -156,7 +157,8 @@ Zotero.ArgusOne = {
 
     const byDoi = new Map();
     for (const item of items) {
-      if (!item.isTopLevelItem()) continue;
+      if (!item || item.libraryID !== libraryID || item.deleted ||
+          !item.isRegularItem() || !item.isTopLevelItem()) continue;
       const doi = this.getItemDOI(item);
       if (!doi) continue;
       if (!byDoi.has(doi)) byDoi.set(doi, []);
@@ -173,91 +175,71 @@ Zotero.ArgusOne = {
   // ───────────────────────────────────────── Merge one group
 
   async mergeGroup(items) {
-    // Newest = greatest dateAdded. Ties broken by itemID (higher wins).
-    items.sort((a, b) => {
-      const da = new Date(a.dateAdded).getTime();
-      const db = new Date(b.dateAdded).getTime();
-      if (db !== da) return db - da;
-      return b.id - a.id;
-    });
-    const survivor = items[0];
-    const losers = items.slice(1);
+    Zotero.DB.requireTransaction();
+    if (!Array.isArray(items) || items.length < 2 ||
+        new Set(items.map(item => item.id)).size !== items.length) {
+      throw new Error("A merge group must contain at least two distinct items.");
+    }
+    const doi = this.getItemDOI(items[0]);
+    for (const item of items) {
+      if (!doi || item.deleted || !item.isRegularItem() || !item.isTopLevelItem() ||
+          item.libraryID !== Zotero.Libraries.userLibraryID || this.getItemDOI(item) !== doi) {
+        throw new Error("The duplicate group changed. Run the scan again before merging.");
+      }
+      if (!Number.isFinite(this.dateAddedTime(item))) {
+        throw new Error("An item has an invalid dateAdded; the newest record cannot be selected.");
+      }
+    }
 
-    // ── 1. Fields: newest is authoritative; fill blanks from losers (newest loser first).
-    const survivorTypeID = survivor.itemTypeID;
+    // Copy before sorting so the confirmed discovery result remains unchanged.
+    const ordered = [...items].sort((a, b) =>
+      this.dateAddedTime(b) - this.dateAddedTime(a) || b.id - a.id);
+    const [survivor, ...losers] = ordered;
+    const missing = value => value == null || value === false || String(value).trim() === "";
+
+    // Only fill fields supported by the survivor's type. An unexpected host
+    // error must escape so the surrounding transaction can roll back.
     for (const loser of losers) {
-      // Only copy fields valid for the survivor's item type.
-      const fields = loser.getUsedFields(true);
-      for (const fieldName of fields) {
-        let fieldID;
-        try { fieldID = Zotero.ItemFields.getID(fieldName); } catch (e) { continue; }
-        if (!fieldID) continue;
-        if (!Zotero.ItemFields.isValidForType(fieldID, survivorTypeID)) continue;
-
-        const survivorVal = survivor.getField(fieldName);
-        if (survivorVal && String(survivorVal).trim() !== "") continue; // newest wins
-        const loserVal = loser.getField(fieldName);
-        if (loserVal && String(loserVal).trim() !== "") {
-          try { survivor.setField(fieldName, loserVal); } catch (e) {}
+      for (const fieldName of loser.getUsedFields(true)) {
+        const fieldID = Zotero.ItemFields.getID(fieldName);
+        if (!fieldID || !Zotero.ItemFields.isValidForType(fieldID, survivor.itemTypeID)) continue;
+        if (missing(survivor.getField(fieldName))) {
+          const value = loser.getField(fieldName);
+          if (!missing(value)) survivor.setField(fieldName, value);
         }
       }
-
-      // Creators: keep survivor's if it has any, else borrow from this loser.
-      if (survivor.getCreators().length === 0) {
-        const c = loser.getCreators();
-        if (c.length) {
-          try { survivor.setCreators(c); } catch (e) {}
-        }
+      if (survivor.getCreators().length === 0 && loser.getCreators().length) {
+        survivor.setCreators(loser.getCreators());
       }
     }
-
-    // ── 2. Tags: union.
-    const tagSeen = new Set(survivor.getTags().map((t) => t.tag + "\x00" + (t.type || 0)));
-    for (const loser of losers) {
-      for (const t of loser.getTags()) {
-        const key = t.tag + "\x00" + (t.type || 0);
-        if (!tagSeen.has(key)) {
-          survivor.addTag(t.tag, t.type);
-          tagSeen.add(key);
-        }
-      }
-    }
-
-    // ── 3. Collections: union — this is the position-preservation guarantee.
-    const targetCollections = new Set(survivor.getCollections());
-    for (const loser of losers) {
-      for (const cid of loser.getCollections()) targetCollections.add(cid);
-    }
-    survivor.setCollections([...targetCollections]);
-
-    // ── 4. Related items: union (excluding the losers themselves).
-    const loserKeys = new Set(losers.map((l) => l.key));
-    const relations = new Set(survivor.relatedItems);
-    for (const loser of losers) {
-      for (const k of loser.relatedItems) {
-        if (!loserKeys.has(k)) relations.add(k);
-      }
-    }
-    survivor.relatedItems = [...relations];
-
     await survivor.save();
 
-    // ── 5. Re-parent children (attachments, notes) from losers to survivor.
+    // Preserve every attachment as a separate record, including trashed ones.
+    // Moving first prevents Zotero's native merge from coalescing similar PDFs.
     for (const loser of losers) {
-      const childIDs = [].concat(loser.getAttachments(), loser.getNotes());
-      for (const cid of childIDs) {
-        const child = await Zotero.Items.getAsync(cid);
-        child.parentItemID = survivor.id;
-        await child.save();
+      for (const id of loser.getAttachments(true)) {
+        const attachment = await Zotero.Items.getAsync(id);
+        attachment.parentItemID = survivor.id;
+        await attachment.save();
+      }
+      if (loser.getAttachments(true).length) {
+        throw new Error("Not all attachments could be moved; the merge was cancelled.");
       }
     }
 
-    // ── 6. Trash the losers.
-    for (const loser of losers) {
-      loser.deleted = true;
-      await loser.save();
-    }
-
+    // Let Zotero preserve incoming/outgoing relations and citation redirects,
+    // rewrite note links, union collections/tags, and trash the older records.
+    // relatedItems is a getter-only property, not a writable item field.
+    const { mergeItems } = ChromeUtils.importESModule("chrome://zotero/content/mergeItems.mjs");
+    await mergeItems(survivor, losers);
     return { survivorID: survivor.id, trashed: losers.length };
+  },
+
+  dateAddedTime(item) {
+    // Zotero stores SQL timestamps in UTC. Parse consistently across hosts.
+    const value = String(item.dateAdded || "");
+    const iso = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value)
+      ? value.replace(" ", "T") + "Z" : value;
+    return Date.parse(iso);
   },
 };

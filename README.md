@@ -10,12 +10,13 @@ Zotero's built-in duplicate detector is fuzzy by design — it inspects titles, 
 
 ## Compatibility
 
-- **Zotero 9 and later** (see `src/argus-one/manifest.json`)
+- Manifest target: **Zotero 9.x**. Zotero 10 is not yet qualified for this plugin.
+- The current development build requires validation in a disposable Zotero 9 profile before release.
 - Cross-platform (Windows, macOS, Linux)
 
 ## Installation
 
-1. Download the latest `argus-one-<version>.xpi` from the [Releases](https://github.com/CTTIR/argus-one/releases) page.
+1. Build the development XPI using the commands below. No GitHub Release was available at the 30 October 2026 audit; the root-level archives are historical and differ from the current source.
 2. In Zotero, open **Tools → Plugins**.
 3. Click the gear icon → **Install Plugin From File…**
 4. Select the downloaded `.xpi`.
@@ -35,8 +36,8 @@ For every group of items that share the same normalized DOI:
 1. **Pick the newest** by `dateAdded` (ties broken by higher `itemID`).
 2. **Newest wins on conflicts.** If the survivor already has a value in a field, that value is kept. Empty fields are filled from older siblings.
 3. **Collections are unioned.** If the DOI appeared in collections `A` and `B`, the survivor ends up in both.
-4. **Tags, related items, and creators** are unioned across all duplicates (creators only if the survivor has none).
-5. **Attachments and child notes** of older copies are re-parented to the survivor.
+4. **Tags, collections, and relations** are merged by Zotero, including incoming links and citation redirects. Creators are borrowed only if the survivor has none.
+5. **Attachments** remain separate records, including trashed attachments; files are not coalesced. Zotero moves child notes and updates their item links. It retains the earliest `dateAdded` after selecting the newest survivor.
 6. **Older copies move to trash** — never deleted permanently.
 
 ### DOI normalization
@@ -49,20 +50,25 @@ Case-insensitive. Strips `https://doi.org/`, `https://dx.doi.org/`, and `doi:` p
 - Group libraries are not touched (user library only in this version).
 - No fuzzy title matching — use Zotero's built-in **Duplicate Items** view for that.
 
-## Building from source
+## Building and checking from source
 
-```powershell
-cd src/argus-one
-Compress-Archive -Path * -DestinationPath ../../argus-one-0.1.0.xpi -Force
-Rename-Item ../../argus-one-0.1.0.xpi.zip ../../argus-one-0.1.0.xpi
+Prerequisites: Node.js 24 (for development tests), Python 3.9 or newer, and
+Zotero 9.x for the separate integration check. No npm packages are required.
+
+```sh
+node --test tests/argus.test.cjs
+python3 -m unittest discover -s tests -p 'test_*.py'
+python3 tools/build.py
 ```
 
-Or with `zip`:
+Install `dist/argus-one-0.1.0-dev.xpi` only in a disposable profile containing
+synthetic records until the [integration checklist](docs/maintenance-2026-10-30.md)
+is complete. The build embeds the current source and MIT licence, checks every
+archive entry, and leaves the historical root archives intact. Repeated builds
+from identical source produce identical bytes.
 
-```bash
-cd src/argus-one
-zip -r ../../argus-one-0.1.0.xpi . -x "*.DS_Store"
-```
+Updates are manual until a published update feed exists. The previous manifest
+referenced a missing `updates.json`; that URL has been removed.
 
 ## Documentation
 
@@ -89,7 +95,7 @@ If Argus One supports your research, please cite it.
 
 > Heller, R. (2026). *Argus One: DOI-based duplicate merger for Zotero* (Version 0.1.0) [Computer software]. https://github.com/CTTIR/argus-one
 
-> **DOI:** none yet. To mint a permanent DOI, enable the [Zenodo–GitHub integration](https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content) and publish a release. Once minted, paste the DOI into the `doi:` field of `CITATION.cff` and into the BibTeX entry above as `doi = {10.xxxx/zenodo.xxxxxxx}`.
+> `CITATION.cff` retains the historical version and identifier. The development changes above are unreleased; DOI registration is not established by the badge.
 
 ## Links
 
