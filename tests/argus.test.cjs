@@ -18,7 +18,7 @@ function fixture(options = {}) {
       isRegularItem: () => true, isTopLevelItem: () => true, isEditable: () => true,
       isFileAttachment: () => false, isAttachment: () => false,
       hasChanged() { return this.dirty; },
-      getField(name) { return this.fields[name] || ''; },
+      getField(name) { return this.fields[name] ?? ''; },
       getUsedFields() { return Object.keys(this.fields); },
       setField(name, value) { if (name === options.failField) throw Error('field failed'); this.fields[name] = value; this.dirty = true; },
       getCreators() { return this.creators; }, setCreators(value) { this.creators = value; this.dirty = true; },
@@ -84,6 +84,32 @@ test('ambiguous Extra identifiers and invalid dedicated DOI are not guessed', ()
   assert.equal(f.argus.getItemDOI(f.item(2, {fields: {DOI: 'bad', extra: 'DOI: 10.1234/a'}})), null);
 });
 
+test('Extra DOI lines must be complete and every declared identifier must be valid', () => {
+  const f = fixture();
+  for (const extra of ['DOI: 10.1234/a trailing text', 'DOI: 10.1234/a\nDOI: invalid',
+                       'DOI:\nDOI: 10.1234/a']) {
+    assert.equal(f.argus.getItemDOI(f.item(1, {fields: {DOI: '', extra}})), null);
+  }
+  assert.equal(f.argus.getItemDOI(f.item(1, {fields: {DOI: '', extra: 'DOI: 10.1234/a\nDOI: 10.1234/A'}})), '10.1234/a');
+});
+
+test('discovery excludes other libraries, child items and deleted records', async () => {
+  const f = fixture();
+  f.item(1); f.item(2);
+  f.item(3, {libraryID: 2}); f.item(4, {deleted: true});
+  f.item(5, {isTopLevelItem: () => false}); f.item(6, {isRegularItem: () => false});
+  const groups = await f.argus.findDuplicateGroups(1);
+  assert.deepEqual(Array.from(groups[0], item => item.id), [1, 2]);
+});
+
+test('impossible calendar timestamps cannot determine the survivor', () => {
+  const f = fixture(), old = f.item(1);
+  for (const dateAdded of ['2026-02-30 00:00:00', '2026-13-01 00:00:00', '2026-01-01 24:00:00']) {
+    assert.throws(() => f.argus.validateGroup([old, f.item(2, {dateAdded})]), /invalid dateAdded/);
+  }
+  assert.equal(f.argus.validateGroup([old, f.item(2, {dateAdded: '2024-02-29 00:00:00'})]), '10.1234/example');
+});
+
 test('plan is read-only, selects newest with ID tie-break, and excludes incompatible groups', () => {
   const f = fixture();
   const old = f.item(1), newest = f.item(2), tied = f.item(3, {dateAdded: newest.dateAdded});
@@ -108,6 +134,25 @@ test('native merge receives newest values, filled blanks and creators without pr
   assert.equal(f.calls[0].creators[0].lastName, 'Author');
   assert.equal(f.calls[0].losers[0], older);
   assert.equal(older.deleted, true);
+});
+
+test('numeric zero values are preserved and can fill an empty field', async () => {
+  const f = fixture();
+  const older = f.item(1, {fields: {DOI: '10.1234/example', volume: 10, issue: 0}});
+  const newer = f.item(2, {fields: {DOI: '10.1234/example', volume: 0, issue: ''}});
+  await f.argus.mergeGroup(f.argus.planGroups([[older, newer]]).plans[0]);
+  assert.equal(f.calls[0].fields.volume, 0);
+  assert.equal(f.calls[0].fields.issue, 0);
+});
+
+test('creator failure stops mutation and recovers prepared fields', async () => {
+  const f = fixture();
+  const older = f.item(1, {creators: [{lastName: 'Author'}]});
+  const newer = f.item(2, {setCreators() { throw Error('creator rejected'); }});
+  await assert.rejects(f.argus.mergeGroup(f.argus.planGroups([[older, newer]]).plans[0]), /creator rejected/);
+  assert.equal(f.calls.length, 0);
+  assert.equal(newer.reloaded, 1);
+  assert.equal(older.deleted, false);
 });
 
 test('stale metadata, child membership and pending edits block a reviewed plan', async () => {

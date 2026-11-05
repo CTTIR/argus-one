@@ -34,6 +34,8 @@ The builder creates `dist/argus-one-0.1.1.xpi`, a corresponding source ZIP and
 SHA-256 receipt. Sorted inputs and fixed archive metadata make repeated builds
 identical. Existing different output files are never overwritten; select a new
 `--output PATH` directory for a revised build.
+Both archives include the MIT licence. Builds reject the plugin source and
+historical root archive directories as destinations.
 
 Keep a full Zotero data-directory backup. First install the candidate in a
 **disposable Zotero profile** using **Tools → Plugins → Install Plugin From File**.
@@ -83,6 +85,7 @@ background merges are performed.
 ## Documentation
 
 - [Audit, acceptance checks, and remaining limits](docs/AUDIT-2026-10-30.md)
+- [Maintenance integration and verification](docs/integration-2026-11-03.md)
 - [Contributing and builds](CONTRIBUTING.md)
 - Existing published documentation: <https://cttir.github.io/argus-one/>
 

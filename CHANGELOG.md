@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Integrate the maintenance audit with the newer native Zotero merge safeguards.
+  Preserve numeric zero fields, reject partial or malformed Extra DOI lines and
+  impossible timestamps, and exclude foreign-library discovery results.
+- Include the MIT licence in both reproducible archives; protect source and
+  historical archive directories, and publish complete new artifacts without
+  replacing an existing destination. Consolidate CI on Node.js 24.
+
 ### 0.1.1 local candidate — 2026-10-30
 
 - Delegate merges to Zotero's native API to preserve replacement identity,

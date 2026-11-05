@@ -89,8 +89,10 @@ Zotero.ArgusOne = {
       const dedicated = item.getField("DOI");
       if (dedicated) return this.normalizeDOI(dedicated);
     }
-    const matches = [...String(item.getField("extra") || "").matchAll(/(?:^|\n)\s*DOI\s*:\s*(\S+)/gi)];
-    const identifiers = new Set(matches.map(match => this.normalizeDOI(match[1])).filter(Boolean));
+    const matches = [...String(item.getField("extra") || "").matchAll(/(?:^|\n)[^\S\r\n]*DOI[^\S\r\n]*:[^\S\r\n]*([^\r\n]*)/gi)];
+    const values = matches.map(match => this.normalizeDOI(match[1]));
+    if (values.some(value => value === null)) return null;
+    const identifiers = new Set(values);
     return identifiers.size === 1 ? [...identifiers][0] : null;
   },
 
@@ -123,6 +125,10 @@ Zotero.ArgusOne = {
       if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(item.dateAdded)) {
         throw new Error("An item has an unsupported dateAdded value; review it before merging");
       }
+      const timestamp = Date.parse(item.dateAdded.replace(" ", "T") + "Z");
+      if (!Number.isFinite(timestamp) || new Date(timestamp).toISOString().slice(0, 19).replace("T", " ") !== item.dateAdded) {
+        throw new Error("An item has an invalid dateAdded value; review it before merging");
+      }
     }
     return doi;
   },
@@ -140,7 +146,7 @@ Zotero.ArgusOne = {
     const items = await Zotero.Items.getAsync(await search.search());
     const byDOI = new Map();
     for (const item of items) {
-      if (!item?.isRegularItem() || !item.isTopLevelItem() || item.deleted) continue;
+      if (!item?.isRegularItem() || !item.isTopLevelItem() || item.deleted || item.libraryID !== libraryID) continue;
       await item.loadAllData();
       const doi = this.getItemDOI(item);
       if (!doi) continue;
@@ -272,7 +278,9 @@ Zotero.ArgusOne = {
           const id = Zotero.ItemFields.getID(name);
           if (!id || !Zotero.ItemFields.isValidForType(id, survivor.itemTypeID)) continue;
           const value = loser.getField(name);
-          if (!String(survivor.getField(name) || "").trim() && String(value || "").trim()) {
+          const current = survivor.getField(name);
+          const blank = value => value === false || value == null || String(value).trim() === "";
+          if (blank(current) && !blank(value)) {
             survivor.setField(name, value);
           }
         }
